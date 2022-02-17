@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: lister
+  name: lister
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lister
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: lister
+    spec:
+      containers:
+      - image: harishkadamudi/client-go:v0.0.2
+        name: client-go
+        imagePullPolicy: Never
+        resources: {}
+status: {}

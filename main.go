@@ -6,6 +6,7 @@ import (
 	"fmt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -14,7 +15,11 @@ func main() {
 	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
 		_ = fmt.Errorf(" no such directory %s ", *kubeconfig)
-		panic(err)
+		config, err = rest.InClusterConfig()
+		if err != nil {
+			fmt.Errorf("error %s, getting incluster configuration", err.Error())
+			panic(err)
+		}
 	}
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
