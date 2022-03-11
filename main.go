@@ -1,13 +1,15 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
+	"time"
 )
 
 func main() {
@@ -26,22 +28,22 @@ func main() {
 		panic(err)
 	}
 
-	pods, err := clientset.CoreV1().Pods("default").List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		panic(err)
-	}
-	for _, pod := range pods.Items {
-		fmt.Printf("Pod Name %s", pod.Name)
-		fmt.Printf("Pod Status %s", pod.Status)
-	}
-
-	deployments, err := clientset.AppsV1().Deployments("default").List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		panic(err)
-	}
-
-	for _, deploy := range deployments.Items {
-		fmt.Printf("Deployment %s", deploy.Name)
-	}
+	informerFactory := informers.NewSharedInformerFactory(clientset, 30*time.Second)
+	podInformer := informerFactory.Core().V1().Pods()
+	podInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(new interface{}) {
+			fmt.Println(" Add called")
+		},
+		DeleteFunc: func(obj interface{}) {
+			fmt.Println(" Delete called")
+		},
+		UpdateFunc: func(oldObj, newObj interface{}) {
+			fmt.Println("deleted was called")
+		},
+	})
+	informerFactory.Start(wait.NeverStop)
+	informerFactory.WaitForCacheSync(wait.NeverStop)
+	pod, err := podInformer.Lister().Pods("default").Get("default")
+	fmt.Println(pod)
 
 }
